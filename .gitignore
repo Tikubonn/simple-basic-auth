@@ -1,0 +1,6 @@
+bin
+build
+simple_basic_auth.egg-info
+NOTE.txt
+sample.py
+*.egg
