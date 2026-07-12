@@ -17,9 +17,10 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from simple_basic_auth import BasicAuth
 
+auth = BasicAuth("anonymous", "password", "SecretZone")
+
 class _Handler (BaseHTTPRequestHandler):
   def do_GET (self):
-    auth = BasicAuth("anonymous", "password", "SecretZone")
     if auth.authorize(self):
       self.send_response(200)
       self.send_header("Content-Type", "text/plain; charset=ascii")

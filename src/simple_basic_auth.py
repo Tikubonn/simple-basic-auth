@@ -1,11 +1,7 @@
 
-import re
 import base64
-import secrets
 import logging
-import traceback
-from typing import ClassVar
-from dataclasses import dataclass
+import secrets
 
 """http.server 向けの簡素な Basic 認証の機能を提供します。
 
@@ -13,10 +9,11 @@ Examples
 --------
 >>> from http.server import BaseHTTPRequestHandler, HTTPServer
 >>> from simple_basic_auth import BasicAuth
+>>>
+>>> auth = BasicAuth("anonymous", "password", "SecretZone")
 >>> 
 >>> class _Handler (BaseHTTPRequestHandler):
 >>>   def do_GET (self):
->>>     auth = BasicAuth("anonymous", "password", "SecretZone")
 >>>     if auth.authorize(self):
 >>>       self.send_response(200)
 >>>       self.send_header("Content-Type", "text/plain; charset=ascii")
@@ -34,36 +31,51 @@ Examples
 
 _LOGGER:"logging.Logger" = logging.getLogger(__name__)
 
-@dataclass(frozen=True)
 class BasicAuth:
 
   """1ユーザに対する Basic 認証機能を提供します。
-
-  Attributes
-  ----------
-  user : str
-    認証するユーザ名です。
-  password : str
-    認証するユーザのパスワードです。
-  realm : str
-    認証する保護領域名です。
   """
 
-  user:str
-  password:str
-  realm:str
+  def _gen_expect_authorization (self, user:str, password:str) -> str:
 
-  _REGEXP_AUTHORIZATION:ClassVar[re.Pattern] = re.compile(r"^Basic (.*?)$")
+    """ユーザ名・パスワードから理想的な Authorization ヘッダの内容を生成します。
 
-  def _parse_authorization (self, source:str) -> tuple[str, str]:
-    match = self._REGEXP_AUTHORIZATION.match(source)
-    if match:
-      main, = match.groups()
-      main_decoded = base64.b64decode(main.strip()).decode("utf-8")
-      user, password = main_decoded.split(":", 1)
-      return user, password
-    else:
-      raise ValueError("Given an invalid source: {!r}".format(source))
+    Parameters
+    ----------
+    user : str
+      認証するユーザ名です。
+    password : str 
+      認証するユーザのパスワードです。
+    """
+
+    return "Basic {:s}".format(
+      base64.b64encode(
+        "{:s}:{:s}".format(user, password).encode("utf-8")
+      ).decode("ascii")
+    )
+
+  def __init__ (self, user:str, password:str, realm:str):
+
+    """インスタンスの初期化を行います。
+
+    Notes
+    -----
+    本クラスは user, password 引数の値をそのままの形ではなく、
+    理想的な Authorization ヘッダの内容に変換して保存します。
+    変換の際には _gen_expect_authorization 秘匿メソッドが使用されます。
+
+    Parameters
+    ----------
+    user : str
+      認証するユーザ名です。
+    password : str
+      認証するユーザのパスワードです。
+    realm : str
+      認証する保護領域名です。
+    """
+
+    self._expect_authorization = self._gen_expect_authorization(user, password, charset)
+    self._realm = realm
 
   def authorize (self, handler:"http.server.BaseHTTPRequestHandler") -> bool:
 
@@ -82,25 +94,15 @@ class BasicAuth:
 
     authorization = handler.headers.get("Authorization", "")
     if authorization:
-      try:
-        user, password = self._parse_authorization(authorization)
-        if (
-          secrets.compare_digest(user, self.user) and 
-          secrets.compare_digest(password, self.password)):
-
-          _LOGGER.info("Basic authorization was succeed") #log.
-
-          return True
-        else:
-
-          _LOGGER.info("Basic authorization was failed: {:s}".format("User, password are mismatched.")) #log.
-
-          return False
-      except:
-        traceback.print_exc()
-
-        _LOGGER.info("Basic authorization was failed: {:s}".format("Internal server error caused on processing.")) #log.
+      if secrets.compare_digest(self._expect_authorization, authorization):
         
+        _LOGGER.info("Basic authorization was succeed") #log.
+
+        return True
+      else:
+
+        _LOGGER.info("Basic authorization was failed: {:s}".format("User, password are mismatched.")) #log.
+
         return False
     else:
 
@@ -119,7 +121,7 @@ class BasicAuth:
     """
 
     handler.send_response(401)
-    handler.send_header("WWW-Authenticate", "Basic realm=\"{:s}\", charset=\"UTF-8\"".format(self.realm))
-    handler.send_header("Content-Type", "text/plain; charset=ascii".format(self.realm))
+    handler.send_header("WWW-Authenticate", "Basic realm=\"{:s}\", charset=\"UTF-8\"".format(self._realm))
+    handler.send_header("Content-Type", "text/plain; charset=ascii".format(self._realm))
     handler.end_headers()
     handler.wfile.write(b"401 Unauthorized")
