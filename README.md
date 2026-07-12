@@ -42,6 +42,14 @@ with HTTPServer(("127.0.0.1", 8080), _Handler) as server:
 pip install .
 ```
 
+### Test
+
+```shell
+pip install .[test]
+pylint --errors-only src
+pytest .
+```
+
 ### Document
 
 ```py
