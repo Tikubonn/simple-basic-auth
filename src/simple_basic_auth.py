@@ -36,7 +36,8 @@ class BasicAuth:
   """1ユーザに対する Basic 認証機能を提供します。
   """
 
-  def _gen_expect_authorization (self, user:str, password:str) -> str:
+  @staticmethod
+  def _gen_expect_authorization (user:str, password:str) -> str:
 
     """ユーザ名・パスワードから理想的な Authorization ヘッダの内容を生成します。
 
@@ -46,6 +47,11 @@ class BasicAuth:
       認証するユーザ名です。
     password : str 
       認証するユーザのパスワードです。
+
+    Returns
+    -------
+    str
+      ユーザ名・パスワードから生成された理想的な Authorization ヘッダです。
     """
 
     return "Basic {:s}".format(
@@ -74,7 +80,7 @@ class BasicAuth:
       認証する保護領域名です。
     """
 
-    self._expect_authorization = self._gen_expect_authorization(user, password, charset)
+    self._expect_authorization = BasicAuth._gen_expect_authorization(user, password, charset)
     self._realm = realm
 
   def authorize (self, handler:"http.server.BaseHTTPRequestHandler") -> bool:

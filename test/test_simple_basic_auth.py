@@ -5,33 +5,21 @@ from simple_basic_auth import BasicAuth
 
 @pytest.mark.parametrize(
   [
-    "source",
-    "expect_result"
+    "user",
+    "password",
+    "expect_authorization"
   ],
   [
     pytest.param(
-      "Basic {:s}".format(base64.b64encode(b"abc:def").decode("ascii")),
-      ("abc", "def")
-    ),
+      "abc",
+      "def",
+      "Basic {:s}".format(
+        base64.b64encode(
+          "{:s}:{:s}".format("abc", "def").encode("utf-8")
+        ).decode("ascii")
+      )
+    )
   ]
 )
-def test_simple_basic_auth_parse_authorization (source:str, expect_result:tuple[str, str]):
-  auth = BasicAuth("", "", "")
-  assert expect_result == auth._parse_authorization(source)
-
-@pytest.mark.parametrize(
-  [
-    "source",
-    "expect_exception"
-  ],
-  [
-    pytest.param(
-      "",
-      ValueError
-    ),
-  ]
-)
-def test_simple_basic_auth_parse_authorization_error (source:str, expect_exception:"typing.Type[Exception]"):
-  auth = BasicAuth("", "", "")
-  with pytest.raises(expect_exception):
-    auth._parse_authorization(source)
+def test_basic_auth_gen_expect_authorization (user:str, password:str, expect_authorization:str):
+  assert BasicAuth._gen_expect_authorization(user, password) == expect_authorization
