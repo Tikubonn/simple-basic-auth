@@ -36,6 +36,7 @@ package-dir = {"" = "src"}
 [project.optional-dependencies]
 test = [
   "pytest",
+  "requests",
   "pylint"
 ]
 [tool.pytest.ini_options]
