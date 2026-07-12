@@ -80,7 +80,7 @@ class BasicAuth:
       認証する保護領域名です。
     """
 
-    self._expect_authorization = BasicAuth._gen_expect_authorization(user, password, charset)
+    self._expect_authorization = BasicAuth._gen_expect_authorization(user, password)
     self._realm = realm
 
   def authorize (self, handler:"http.server.BaseHTTPRequestHandler") -> bool:
@@ -127,7 +127,7 @@ class BasicAuth:
     """
 
     handler.send_response(401)
-    handler.send_header("WWW-Authenticate", "Basic realm=\"{:s}\", charset=\"UTF-8\"".format(self._realm))
+    handler.send_header("WWW-Authenticate", 'Basic realm="{:s}", charset="UTF-8"'.format(self._realm))
     handler.send_header("Content-Type", "text/plain; charset=ascii".format(self._realm))
     handler.end_headers()
     handler.wfile.write(b"401 Unauthorized")

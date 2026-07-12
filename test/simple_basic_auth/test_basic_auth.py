@@ -3,6 +3,9 @@ import base64
 import pytest
 from simple_basic_auth import BasicAuth
 
+"""BasicAuth クラスの各機能の単体テストを行います。
+"""
+
 @pytest.mark.parametrize(
   [
     "user",
@@ -22,4 +25,8 @@ from simple_basic_auth import BasicAuth
   ]
 )
 def test_basic_auth_gen_expect_authorization (user:str, password:str, expect_authorization:str):
+
+  """BasicAuth._gen_expect_authorization メソッドの動作確認を行います。
+  """
+
   assert BasicAuth._gen_expect_authorization(user, password) == expect_authorization
